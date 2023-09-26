@@ -30,23 +30,6 @@ defmodule Exrrules.Language.English do
     ]
   end
 
-  def months_rules do
-    [
-      :january,
-      :february,
-      :march,
-      :april,
-      :may,
-      :june,
-      :july,
-      :august,
-      :september,
-      :october,
-      :november,
-      :december
-    ]
-  end
-
   def rules do
     [
       skip: ~r/^[ \r\n\t]+|^\.$/,
@@ -95,4 +78,33 @@ defmodule Exrrules.Language.English do
       comma: ~r/^(,\s*|(and|or)\s*)+/i
     ]
   end
+
+  @months_rules [
+    :january,
+    :february,
+    :march,
+    :april,
+    :may,
+    :june,
+    :july,
+    :august,
+    :september,
+    :october,
+    :november,
+    :december
+  ]
+
+  def months_rules, do: @months_rules
+
+  @weekdays_rules [
+    :monday,
+    :tuesday,
+    :wednesday,
+    :thursday,
+    :friday,
+    :saturday,
+    :sunday
+  ]
+
+  def weekdays_rules, do: @weekdays_rules
 end
