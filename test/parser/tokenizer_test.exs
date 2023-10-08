@@ -16,12 +16,16 @@ defmodule Exrrules.Parser.TokenizerTest do
     assert %Tokenizer{tokens: %{}, keywords: []} == Tokenizer.tokenize("")
 
     assert %Tokenizer{
-             keywords: [:every, :monday, :at, :time],
+             keywords: [:every, :monday, :at, :time, :comma, :number],
              tokens: %{
-               at: [%Token{rule: :time, value: nil, token: "10am"}],
-               every: [%Token{rule: :monday, value: nil, token: "monday"}]
+               at: [
+                 %Token{rule: :time, value: "10am", token: "10am"},
+                 %Token{rule: :comma, value: "and", token: "and"},
+                 %Token{rule: :number, value: "18", token: "18"}
+               ],
+               every: [%Token{rule: :monday, value: "MO", token: "monday"}]
              }
-           } == Tokenizer.tokenize("every monday at 10am")
+           } == Tokenizer.tokenize("every monday at 10am and 18")
   end
 
   test "rule: dates" do

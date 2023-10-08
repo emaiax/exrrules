@@ -51,7 +51,7 @@ defmodule Exrrules.Parser.Tokenizer do
               raise "Can't tokenize #{inspect(other)} from #{inspect(input)}"
           end
 
-        {%Token{rule: rule, token: String.trim(match)}, rest}
+        {Token.new(rule, String.trim(match)), rest}
 
       _ ->
         invalid_token =
