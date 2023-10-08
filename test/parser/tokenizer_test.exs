@@ -29,17 +29,38 @@ defmodule Exrrules.Parser.TokenizerTest do
   end
 
   test "rule: dates" do
+    # yyyy-mm-dd
+    #
     assert [:date] = tokenize("2032-04-20")
     assert [:date] = tokenize("2032/04/20")
 
+    # yyyy-dd-mm
+    #
+    assert [:date] = tokenize("2032-20-04")
+    assert [:date] = tokenize("2032/20/04")
+
+    # dd-mm-yyyy
+    #
     assert [:date] = tokenize("20-04-2032")
     assert [:date] = tokenize("20/04/2032")
 
+    # mm-dd-yyyy
+    #
+    assert [:date] = tokenize("04-20-2032")
+    assert [:date] = tokenize("04/20/2032")
+
+    # month dd yyyy
+    # month ddth yyyy
+    # month ddth, yyyy
+    #
     assert [:date_text] = tokenize("Dec 15 2049")
     assert [:date_text] = tokenize("Dec 15th 2049")
     assert [:date_text] = tokenize("Dec 15th, 2049")
 
-    # pending
+    # dd month yyyy
+    # ddth month yyyy
+    # ddth month, yyyy
+    #
     assert [:date_text] = tokenize("15 Dec 2049")
     assert [:date_text] = tokenize("15th Dec 2049")
     assert [:date_text] = tokenize("15th Dec, 2049")

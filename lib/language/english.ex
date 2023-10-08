@@ -40,7 +40,9 @@ defmodule Exrrules.Language.English do
       # date:
       #
       #   - yyyy-mm-dd, yyyy/mm/dd
+      #   - yyyy-dd-mm, yyyy/dd/mm
       #   - dd-mm-yyyy, dd/mm/yyyy
+      #   - mm-dd-yyyy, mm/dd/yyyy
       #
       date: "(\\d{4}(-|/)\\d{2}(-|/)\\d{2})|(\\d{2}(-|/)\\d{2}(-|/)\\d{4})",
       #
