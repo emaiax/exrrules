@@ -74,7 +74,7 @@ defmodule Exrrules.Language.English do
       #
       nth: {"([1-9][0-9]*)(th|nd|rd|st)", allow_comma: true},
       number: {"[1-9][0-9]*", allow_comma: true},
-      # number_text: {"(one|two|three)", allow_comma: true},
+      number_text: {"(one|two|three)", allow_comma: true},
 
       # relative positions
       #
@@ -90,6 +90,7 @@ defmodule Exrrules.Language.English do
       other: "other",
       on: "(on|in)",
       at: "(at)",
+      of: "of",
       the: "the",
       for: "for",
       times: "times?",
