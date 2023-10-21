@@ -3,135 +3,84 @@ defmodule Exrrules.ParserTest do
 
   alias Exrrules.Parser
 
-  test "error handling" do
-    assert_raise RuntimeError, "Unexpected end", fn -> Parser.to_rrules("every day at") end
+  @tag :keep
+  test "rule: interval" do
+    assert %{rrule: %{freq: :daily, interval: 5}} = Parser.parse("every 5 days")
+    assert %{rrule: %{freq: :daily, interval: 2}} = Parser.parse("every other day")
+    assert %{rrule: %{freq: :hourly, interval: 2}} = Parser.parse("every other hour")
+    assert %{rrule: %{freq: :weekly, interval: 2}} = Parser.parse("every other week")
+    assert %{rrule: %{freq: :weekly, interval: 2}} = Parser.parse("every two weeks")
+    assert %{rrule: %{freq: :monthly, interval: 3}} = Parser.parse("every three months")
+  end
 
-    assert_raise RuntimeError, "Invalid token found \"nope\"", fn ->
-      Parser.to_rrules("every day at nope")
+  @tag :keep
+  test "rule: every" do
+    assert %{rrule: %{freq: :hourly}} = Parser.parse("every hour")
+    assert %{rrule: %{freq: :daily}} = Parser.parse("every day")
+    assert %{rrule: %{freq: :weekly}} = Parser.parse("every week")
+    assert %{rrule: %{freq: :monthly}} = Parser.parse("every month")
+    assert %{rrule: %{freq: :yearly}} = Parser.parse("every year")
+
+    assert %{rrule: %{freq: :weekly, byday: ~w(FR SA)}} =
+             Parser.parse("every friday and saturday")
+
+    assert %{rrule: %{freq: :weekly, byday: ~w(FR SA SU)}} =
+             Parser.parse("every friday, saturday and sunday")
+
+    assert %{rrule: %{freq: :weekly, byday: ~w(MO TU WE TH FR)}} =
+             Parser.parse("every weekday")
+
+    assert %{rrule: %{freq: :monthly, bymonthday: [1, 15]}} =
+             Parser.parse("every 1st and 15th")
+
+    assert %{rrule: %{freq: :yearly, bymonth: [1, 4, 9]}} =
+             Parser.parse("every january, april and september")
+
+    # TODO: support dates:
+    # - we need to change the English.rules() to support simple dates as `month day`
+    # - we need to convert rules to structs so we can hold more configurations or
+    #   multiples regexes only to void very long regex lines, allowing commas and such
+    #
+    # assert %{rrule: %{freq: :yearly, bymonth: [1, 4, 9]}} =
+    #          Parser.parse("every january 1st, april 15th and september 30th")
+  end
+
+  @tag :keep
+  test "rule: at" do
+    assert %{rrule: %{freq: :daily, byhour: [10, 17]}} = Parser.parse("every day at 10 and 17")
+
+    assert %{rrule: %{freq: :weekly, byhour: [10, 17], byday: ~w(MO TU WE TH FR)}} =
+             Parser.parse("every weekday at 10 and 17")
+
+    assert_raise RuntimeError, ~r{:at group: :monday}, fn ->
+      Parser.parse("every weekday at mondays")
+    end
+
+    assert_raise RuntimeError, ~r{:at group: :april}, fn ->
+      Parser.parse("every weekday at april")
     end
   end
 
-  test "parse text date" do
-    assert ~D[2048-07-13] == Parser.parse_date("2048-07-13")
-    assert ~D[2049-12-15] == Parser.parse_date("Dec 15 2049")
-    assert ~D[2049-12-15] == Parser.parse_date("Dec 15, 2049")
-  end
+  @tag :keep
+  test "rule: (on|in)" do
+    assert %{rrule: %{freq: :weekly, byday: ~w(MO)}} = Parser.parse("every day on mondays")
 
-  test "days" do
-    assert Parser.to_rrules("every day") == "FREQ=DAILY"
-    assert Parser.to_rrules("every day at 9") == "FREQ=DAILY;BYHOURS=9"
-    assert Parser.to_rrules("every 4 days") == "INTERVAL=4;FREQ=DAILY"
-    assert Parser.to_rrules("every 5 days at 8") == "INTERVAL=5;FREQ=DAILY;BYHOURS=8"
-    assert Parser.to_rrules("every other day") == "INTERVAL=2;FREQ=DAILY"
-    assert Parser.to_rrules("every other day at 10") == "INTERVAL=2;FREQ=DAILY;BYHOURS=10"
-  end
+    assert %{rrule: %{freq: :weekly, byday: ~w(MO WE FR)}} =
+             Parser.parse("every week on monday, wednesday and friday")
 
-  test "multiple times" do
-    assert Parser.to_rrules("every day at 9, 15, 20") == "FREQ=DAILY;BYHOURS=9,15,20"
-    assert Parser.to_rrules("every day at 9 and 15") == "FREQ=DAILY;BYHOURS=9,15"
-    assert Parser.to_rrules("every day at 9 or 20") == "FREQ=DAILY;BYHOURS=9,20"
-    assert Parser.to_rrules("every day at 9, 12 and 15") == "FREQ=DAILY;BYHOURS=9,12,15"
-  end
+    assert %{rrule: %{freq: :weekly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
+             Parser.parse("every weekday on april and december")
 
-  test "special week days" do
-    assert Parser.to_rrules("every weekday") == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
-    assert Parser.to_rrules("every weekday at 8") == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOURS=8"
+    assert %{rrule: %{freq: :hourly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
+             Parser.parse("every hour on april and december on weekdays")
 
-    assert Parser.to_rrules("every workday") == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
-    assert Parser.to_rrules("every workday at 8") == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOURS=8"
+    assert %{rrule: %{freq: :hourly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
+             Parser.parse("every hour in april and december on weekdays")
 
-    # assert Parser.to_rrules("every work day") == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
-    # assert Parser.to_rrules("every work day at 8") == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOURS=8"
-    # assert Parser.to_rrules("every week day") == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
-    # assert Parser.to_rrules("every week day at 8") == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOURS=8"
-  end
+    assert %{rrule: %{freq: :hourly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
+             Parser.parse("every hour on weekdays in april and december")
 
-  test "week days" do
-    assert Parser.to_rrules("every mo") == "FREQ=WEEKLY;BYDAY=MO"
-    assert Parser.to_rrules("every mon") == "FREQ=WEEKLY;BYDAY=MO"
-    assert Parser.to_rrules("every monday") == "FREQ=WEEKLY;BYDAY=MO"
-    assert Parser.to_rrules("every monday at 8") == "FREQ=WEEKLY;BYDAY=MO;BYHOURS=8"
-    assert Parser.to_rrules("every other monday") == "INTERVAL=2;FREQ=WEEKLY;BYDAY=MO"
-
-    assert Parser.to_rrules("every tu") == "FREQ=WEEKLY;BYDAY=TU"
-    assert Parser.to_rrules("every tue") == "FREQ=WEEKLY;BYDAY=TU"
-    assert Parser.to_rrules("every tuesday") == "FREQ=WEEKLY;BYDAY=TU"
-    assert Parser.to_rrules("every tuesday at 10") == "FREQ=WEEKLY;BYDAY=TU;BYHOURS=10"
-    assert Parser.to_rrules("every other tuesday") == "INTERVAL=2;FREQ=WEEKLY;BYDAY=TU"
-
-    assert Parser.to_rrules("every we") == "FREQ=WEEKLY;BYDAY=WE"
-    assert Parser.to_rrules("every wed") == "FREQ=WEEKLY;BYDAY=WE"
-    assert Parser.to_rrules("every wednesday") == "FREQ=WEEKLY;BYDAY=WE"
-    assert Parser.to_rrules("every other wednesday") == "INTERVAL=2;FREQ=WEEKLY;BYDAY=WE"
-    assert Parser.to_rrules("every wednesday at 12") == "FREQ=WEEKLY;BYDAY=WE;BYHOURS=12"
-
-    assert Parser.to_rrules("every thu") == "FREQ=WEEKLY;BYDAY=TH"
-    assert Parser.to_rrules("every thur") == "FREQ=WEEKLY;BYDAY=TH"
-    assert Parser.to_rrules("every thursday") == "FREQ=WEEKLY;BYDAY=TH"
-    assert Parser.to_rrules("every thursday at 14") == "FREQ=WEEKLY;BYDAY=TH;BYHOURS=14"
-    assert Parser.to_rrules("every other thursday") == "INTERVAL=2;FREQ=WEEKLY;BYDAY=TH"
-
-    assert Parser.to_rrules("every fr") == "FREQ=WEEKLY;BYDAY=FR"
-    assert Parser.to_rrules("every fri") == "FREQ=WEEKLY;BYDAY=FR"
-    assert Parser.to_rrules("every friday") == "FREQ=WEEKLY;BYDAY=FR"
-    assert Parser.to_rrules("every friday at 16") == "FREQ=WEEKLY;BYDAY=FR;BYHOURS=16"
-    assert Parser.to_rrules("every other friday") == "INTERVAL=2;FREQ=WEEKLY;BYDAY=FR"
-  end
-
-  test "month names" do
-    assert Parser.to_rrules("every jan") == "FREQ=YEARLY;BYMONTH=1"
-    assert Parser.to_rrules("every feb") == "FREQ=YEARLY;BYMONTH=2"
-    assert Parser.to_rrules("every mar") == "FREQ=YEARLY;BYMONTH=3"
-    assert Parser.to_rrules("every apr") == "FREQ=YEARLY;BYMONTH=4"
-    assert Parser.to_rrules("every may") == "FREQ=YEARLY;BYMONTH=5"
-    assert Parser.to_rrules("every june") == "FREQ=YEARLY;BYMONTH=6"
-    assert Parser.to_rrules("every july") == "FREQ=YEARLY;BYMONTH=7"
-    assert Parser.to_rrules("every august") == "FREQ=YEARLY;BYMONTH=8"
-    assert Parser.to_rrules("every september") == "FREQ=YEARLY;BYMONTH=9"
-    assert Parser.to_rrules("every october") == "FREQ=YEARLY;BYMONTH=10"
-    assert Parser.to_rrules("every november") == "FREQ=YEARLY;BYMONTH=11"
-    assert Parser.to_rrules("every december") == "FREQ=YEARLY;BYMONTH=12"
-  end
-
-  test "multiple week days" do
-    assert Parser.to_rrules("every monday and tuesday") == "FREQ=WEEKLY;BYDAY=MO,TU"
-
-    # assert Parser.to_rrules("every monday, wednesday and friday") == "FREQ=WEEKLY;BYDAY=MO,WE,FR"
-
-    # assert Parser.to_rrules("every monday and tuesday at 10") ==
-    #          "FREQ=WEEKLY;BYDAY=MO,TU;BYHOUR=10"
-
-    # assert Parser.to_rrules("every monday, wednesday and friday at 12 and 20") ==
-    #          "FREQ=WEEKLY;BYDAY=MO,WE,FR;BYHOUR=12,20"
-  end
-
-  test "weeks" do
-    assert Parser.to_rrules("every week") == "FREQ=WEEKLY"
-    # assert Parser.to_rrules("every week on friday") == "FREQ=WEEKLY;BYDAY=FR"
-    # assert Parser.to_rrules("every other week on monday") == "INTERVAL=2;FREQ=WEEKLY;BYDAY=MO"
-    assert Parser.to_rrules("every week at 9") == "FREQ=WEEKLY;BYHOURS=9"
-    assert Parser.to_rrules("every 2 weeks") == "INTERVAL=2;FREQ=WEEKLY"
-    assert Parser.to_rrules("every 2 weeks at 8") == "INTERVAL=2;FREQ=WEEKLY;BYHOURS=8"
-    assert Parser.to_rrules("every other week") == "INTERVAL=2;FREQ=WEEKLY"
-    assert Parser.to_rrules("every other week at 10") == "INTERVAL=2;FREQ=WEEKLY;BYHOURS=10"
-  end
-
-  test "months" do
-    assert Parser.to_rrules("every month") == "FREQ=MONTHLY"
-    assert Parser.to_rrules("every month at 9") == "FREQ=MONTHLY;BYHOURS=9"
-    assert Parser.to_rrules("every 2 months") == "INTERVAL=2;FREQ=MONTHLY"
-    assert Parser.to_rrules("every 2 months at 8") == "INTERVAL=2;FREQ=MONTHLY;BYHOURS=8"
-    assert Parser.to_rrules("every other month") == "INTERVAL=2;FREQ=MONTHLY"
-    assert Parser.to_rrules("every other month at 10") == "INTERVAL=2;FREQ=MONTHLY;BYHOURS=10"
-  end
-
-  test "until" do
-    # assert Parser.to_rrules("every day until 2032-02-07") == "FREQ=DAILY;UNTIL=20320207T000000Z"
-
-    # assert Parser.to_rrules("every day at 10 until Dec 15 2049") ==
-    # "FREQ=DAILY;BYHOURS=10;UNTIL=20491215T000000Z"
-
-    assert Parser.to_rrules("every other day at 3 until Dec 15, 2049") ==
-             "INTERVAL=2;FREQ=DAILY;BYHOURS=3;UNTIL=20491215T000000Z"
+    assert %{rrule: %{freq: :hourly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
+             Parser.parse("every hour on weekdays of april and december")
   end
 end
