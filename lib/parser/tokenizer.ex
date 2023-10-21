@@ -138,7 +138,7 @@ defmodule Exrrules.Parser.Tokenizer do
       # Non-keyword tokens, add it to the current group
       false ->
         # if token is relative, but input is empty, we need to raise an error
-        if token.rule in Exrrules.Language.English.relatives() && Enum.empty?(rest) do
+        if Token.is_relative?(token) && Enum.empty?(rest) do
           raise "Can't find matching token after #{inspect(token.rule)}"
         end
 

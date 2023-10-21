@@ -6,7 +6,10 @@ defmodule Exrrules.Parser.Token do
 
   @months Exrrules.Language.English.months()
   @weekdays Exrrules.Language.English.weekdays()
+
   @relatives ~w(first second third next last)a
+
+  def is_relative?(%__MODULE__{rule: rule}), do: rule in @relatives
 
   def new(rule, token) do
     %__MODULE__{
