@@ -83,4 +83,26 @@ defmodule Exrrules.ParserTest do
     assert %{rrule: %{freq: :hourly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
              Parser.parse("every hour on weekdays of april and december")
   end
+
+  test "rule: for" do
+    assert %{rrule: %{freq: :daily, count: 20}} = Parser.parse("every day for 20 times")
+    assert %{rrule: %{freq: :monthly, count: 12}} = Parser.parse("every month for 12 times")
+  end
+
+  @tag :keep
+  test "mixed rules" do
+    assert %{
+             rrule: %{
+               count: 3,
+               interval: 2,
+               freq: :hourly,
+               byday: ~w(MO TU WE TH FR),
+               byhour: [9, 18],
+               bymonth: [4, 12]
+             }
+           } =
+             Parser.parse(
+               "every other hour on weekdays of april and december for 3 times at 9 and 18"
+             )
+  end
 end

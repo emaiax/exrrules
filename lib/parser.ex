@@ -153,6 +153,16 @@ defmodule Exrrules.Parser do
     end
   end
 
+  # process a single token inside :for rule group
+  defp process_token({:for, token}, rrule) do
+    case token do
+      # jibberish
+      %{rule: :times} -> rrule
+      %{rule: :number} -> RRULE.add_count(rrule, token.value)
+      unsupported -> raise "Unsupported rule inside :on group: #{inspect(unsupported.rule)}"
+    end
+  end
+
   def is_comma?(:comma), do: true
   def is_comma?(%{rule: :comma}), do: true
   def is_comma?(_not_comma), do: false
