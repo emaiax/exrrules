@@ -95,7 +95,7 @@ defmodule Exrrules.Parser.Tokenizer do
   # Whenever we capture an `:on` that denotes a starting or ending dates,
   # we must not close the current group.
   defp group_tokens([%{rule: :on} = token | rest], keywords, %{current_group: group} = result)
-       when group in ~w(starting until)a do
+       when group in ~w(starting until on)a do
     tokens = Enum.reverse([token | Enum.reverse(result[group])])
 
     group_tokens(rest, keywords, Map.put(result, group, tokens))
