@@ -82,6 +82,12 @@ defmodule Exrrules.Parser do
       %{rule: :comma} ->
         rrule
 
+      %{rule_group: :month} ->
+        rrule
+        |> RRULE.add_freq(:yearly, lazy: true)
+        |> RRULE.add_month(absolute.value)
+        |> RRULE.add_month_day(relative.value)
+
       %{rule_group: :weekday} ->
         rrule
         |> RRULE.add_freq(:monthly, lazy: true)
@@ -93,17 +99,20 @@ defmodule Exrrules.Parser do
         |> RRULE.add_month_day(relative.value)
 
       unsupported ->
-        raise "Unsupported rule inside in relative :#{relative.rule} group: #{inspect(unsupported)}"
+        raise "Unsupported rule in relative :#{relative.rule} group: #{inspect(unsupported)}"
     end
   end
 
   # process a single token inside :every rule group
   defp process_token({:every, token}, rrule) do
     case token do
-      # ingest other/number tokens that denotes an interval
-      #
-      %{rule: rule} when rule in [:other, :number, :number_text] ->
+      %{rule_group: :interval} ->
         RRULE.add_interval(rrule, token.value)
+
+      %{rule: number} when number in [:number, :number_text] ->
+        rrule
+        |> RRULE.add_freq(:monthly, lazy: true)
+        |> RRULE.add_month_day(token.value)
 
       %{rule: :hours} ->
         RRULE.add_freq(rrule, :hourly)
@@ -137,8 +146,12 @@ defmodule Exrrules.Parser do
 
       %{rule_group: :relative} ->
         rrule
-        |> RRULE.add_freq(:monthly)
+        |> RRULE.add_freq(:monthly, lazy: true)
         |> RRULE.add_month_day(token.value)
+
+      # jibberish
+      %{rule: rule} when rule in ~w(other)a ->
+        rrule
 
       unsupported ->
         raise "Unsupported rule inside :every group: #{inspect(unsupported)}"
@@ -205,10 +218,26 @@ defmodule Exrrules.Parser do
   # process a single token inside :for rule group
   defp process_token({:for, token}, rrule) do
     case token do
+      %{rule: :number} ->
+        RRULE.add_count(rrule, token.value)
+
       # jibberish
-      %{rule: :times} -> rrule
-      %{rule: :number} -> RRULE.add_count(rrule, token.value)
-      unsupported -> raise "Unsupported rule inside :on group: #{inspect(unsupported.rule)}"
+      %{rule: :times} ->
+        rrule
+
+      unsupported ->
+        raise "Unsupported rule inside :on group: #{inspect(unsupported.rule)}"
+    end
+  end
+
+  # process a single token inside :until rule group
+  defp process_token({:until, token}, rrule) do
+    case token do
+      %{rule: rule} when rule in [:date, :date_text] ->
+        RRULE.add_until(rrule, token.value)
+
+      unsupported ->
+        raise "Unsupported rule inside :until group: #{inspect(unsupported.rule)}"
     end
   end
 

@@ -34,6 +34,18 @@ defmodule Exrrules.ParserTest do
     assert %{rrule: %{freq: :yearly, bymonth: [1, 4, 9]}} =
              Parser.parse("every january, april and september")
 
+    assert %{rrule: %{freq: :yearly, bymonthday: [7], bymonth: [2]}} =
+             Parser.parse("every 7 feb")
+
+    assert %{rrule: %{freq: :yearly, bymonthday: [7], bymonth: [2]}} =
+             Parser.parse("every 7th feb")
+
+    assert %{rrule: %{freq: :yearly, bymonthday: [16], bymonth: [4]}} =
+             Parser.parse("every april 16")
+
+    assert %{rrule: %{freq: :yearly, bymonthday: [16], bymonth: [4]}} =
+             Parser.parse("every april 16th")
+
     # TODO: support dates:
     # - we need to change the English.rules() to support simple dates as `month day`
     # - we need to convert rules to structs so we can hold more configurations or
@@ -148,5 +160,8 @@ defmodule Exrrules.ParserTest do
 
     assert %{rrule: %{freq: :yearly, bymonth: [4], byday: ["+4FR"]}} =
              Parser.parse("every april on the fourth friday")
+
+    # assert %{rrule: %{freq: :yearly, byday: ["-3TU"]}} =
+    #          Parser.parse("every month on the 3rd last tuesday")
   end
 end

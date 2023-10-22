@@ -67,6 +67,16 @@ defmodule Exrrules.Parser.TokenizerTest do
     assert [:date_text] = keywords("15 Dec 2049")
     assert [:date_text] = keywords("15th Dec 2049")
     assert [:date_text] = keywords("15th Dec, 2049")
+
+    # assert [:date_text] = keywords("15 dec")
+    # assert [:date_text] = keywords("15, dec")
+    # assert [:date_text] = keywords("15th dec")
+    # assert [:date_text] = keywords("15th, dec")
+
+    # assert [:date_text] = keywords("dec 15")
+    # assert [:date_text] = keywords("dec 15th")
+    # assert [:date_text] = keywords("dec, 15")
+    # assert [:date_text] = keywords("dec, 15th")
   end
 
   test "rule: time" do
@@ -161,15 +171,15 @@ defmodule Exrrules.Parser.TokenizerTest do
 
   test "invalid rules" do
     tokens = [
-      {"every hoursx", ~r{Unsupported rule "hoursx"}},
-      {"every daysx", ~r{Unsupported rule "daysx"}},
-      {"every weeksx", ~r{Unsupported rule "weeksx"}},
-      {"every monthsx", ~r{Unsupported rule "monthsx"}},
-      {"every yearsx", ~r{Unsupported rule "yearsx"}},
+      {"every hoursx", ~r{Unsupported token found: "hoursx"}},
+      {"every daysx", ~r{Unsupported token found: "daysx"}},
+      {"every weeksx", ~r{Unsupported token found: "weeksx"}},
+      {"every monthsx", ~r{Unsupported token found: "monthsx"}},
+      {"every yearsx", ~r{Unsupported token found: "yearsx"}},
       # removed support of :next rule
-      {"every next", ~r{Unsupported rule "next"}},
+      {"every next", ~r{Unsupported token found: "next"}},
       # not a real time, so it doesn't match the time rule
-      {"25 pm", ~r{Unsupported rule "pm"}}
+      {"25 pm", ~r{Unsupported token found: "pm"}}
     ]
 
     Enum.each(tokens, fn {text, regex} ->

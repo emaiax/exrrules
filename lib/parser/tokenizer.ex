@@ -71,7 +71,7 @@ defmodule Exrrules.Parser.Tokenizer do
           |> String.split(" ")
           |> List.first()
 
-        raise "Unsupported rule #{inspect(invalid_token)}"
+        raise "Unsupported token found: #{inspect(invalid_token)}"
     end
   end
 
@@ -234,6 +234,9 @@ defmodule Exrrules.Parser.Tokenizer do
     case Enum.member?(keywords, token.rule) do
       # token group found, close the current group and start a new one
       true ->
+        # when we open groups, we expect to find a token after it
+        if Enum.empty?(rest), do: raise("Unexpected end after #{inspect(token.rule)}")
+
         result =
           result
           |> Map.put(token.rule, [])
@@ -243,10 +246,38 @@ defmodule Exrrules.Parser.Tokenizer do
 
       # Non-keyword tokens, add it to the current group
       false ->
-        # if token is relative, but input is empty, we need to raise an error
+        # if token is relative and there are no more tokens to process, we raise an exception
         if Token.is_relative?(token) && Enum.empty?(rest) do
           raise "Can't find matching token after #{inspect(token.rule)}"
         end
+
+        # check for interval only on the very first token inside :every group
+        token =
+          if current_group == :every && Enum.empty?(group_tokens) do
+            is_interval =
+              case token.rule do
+                # every other day | every other monday
+                :other ->
+                  true
+
+                rule when rule in [:nth, :number, :number_text] ->
+                  case Enum.at(rest, 0) do
+                    # every 2nd | every first
+                    nil -> false
+                    # every 7 feb | 2nd june | every first april
+                    %{rule_group: :month} -> false
+                    # every 2nd day | every 3rd week | every 3 months
+                    _is_interval -> true
+                  end
+
+                _not_interval ->
+                  false
+              end
+
+            if is_interval, do: Token.force_interval!(token), else: token
+          else
+            token
+          end
 
         tokens = Enum.reverse([token | group_tokens])
 
