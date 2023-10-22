@@ -153,7 +153,7 @@ defmodule Exrrules.Parser.TokenizerTest do
     assert [:first, :monday] = keywords("first monday")
     assert [:second, :tuesday] = keywords("second tuesday")
     assert [:third, :wednesday] = keywords("third wednesday")
-    assert [:next, :thursday] = keywords("next thursday")
+    assert [:fourth, :thursday] = keywords("fourth thursday")
     assert [:last, :friday] = keywords("last friday")
   end
 
@@ -164,9 +164,8 @@ defmodule Exrrules.Parser.TokenizerTest do
       {"every weeksx", ~r{Unsupported rule "weeksx"}},
       {"every monthsx", ~r{Unsupported rule "monthsx"}},
       {"every yearsx", ~r{Unsupported rule "yearsx"}},
-      {"every next", ~r{Can't find valid token after :next}},
-      {"every last", ~r{Can't find valid token after :last}},
-      # {"every next day", ~r{Can't find valid token after :next}},
+      # removed support of :next rule
+      {"every next", ~r{Unsupported rule "next"}},
       # not a real time, so it doesn't match the time rule
       {"25 pm", ~r{Unsupported rule "pm"}}
     ]
@@ -174,8 +173,6 @@ defmodule Exrrules.Parser.TokenizerTest do
     Enum.each(tokens, fn {text, regex} ->
       assert_raise RuntimeError, regex, fn ->
         keywords(text)
-
-        IO.inspect("#{text}: should've raised exception")
       end
     end)
   end

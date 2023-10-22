@@ -79,11 +79,11 @@ defmodule Exrrules.Language.English do
 
       # relative positions
       #
+      # next: "next", do we really want to support next/past?
       first: "first",
       second: "second",
       third: "third",
       fourth: "fourth",
-      next: "next",
       last: "last",
 
       # keywords
