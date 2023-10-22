@@ -94,6 +94,7 @@ defmodule Exrrules.Language.English do
       of: "of",
       the: "the",
       for: "for",
+      # times is optional, but if exists, it can only exist inside :for group
       times: "times?",
       until: "until",
       starting: "starting",
