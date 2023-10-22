@@ -1,1 +1,1 @@
-ExUnit.start(exclude: [batch: true])
+ExUnit.start(trace: true, exclude: :batch)
