@@ -41,6 +41,7 @@ defmodule Exrrules.RRULE do
   def add_interval(%__MODULE__{} = rrule, value), do: %{rrule | interval: value}
 
   def add_hour(%__MODULE__{} = rrule, value), do: update_rrule(rrule, :byhour, value)
+  def add_minute(%__MODULE__{} = rrule, value), do: update_rrule(rrule, :byminute, value)
 
   def add_month_day(%__MODULE__{} = rrule, value), do: update_rrule(rrule, :bymonthday, value)
 
@@ -72,6 +73,8 @@ defmodule Exrrules.RRULE do
 
     add_month(rrule, value)
   end
+
+  defp update_rrule(rrule, _key, nil), do: rrule
 
   defp update_rrule(rrule, key, value) do
     case Map.fetch(rrule, key) do

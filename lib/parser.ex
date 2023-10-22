@@ -145,17 +145,6 @@ defmodule Exrrules.Parser do
     end
   end
 
-  # process a single token inside :at rule group
-  defp process_token({:at, token}, rrule) do
-    case token do
-      %{rule: rule} when rule in [:other, :number, :number_text] ->
-        RRULE.add_hour(rrule, token.value)
-
-      unsupported ->
-        raise "Unsupported rule inside :at group: #{inspect(unsupported)}"
-    end
-  end
-
   # process a single token inside :on rule group
   defp process_token({:on, token}, rrule) do
     case token do
@@ -194,6 +183,22 @@ defmodule Exrrules.Parser do
 
       unsupported ->
         raise "Unsupported rule inside :on group: #{inspect(unsupported.rule)}"
+    end
+  end
+
+  # process a single token inside :at rule group
+  defp process_token({:at, token}, rrule) do
+    case token do
+      %{rule: rule} when rule in [:other, :number, :number_text] ->
+        RRULE.add_hour(rrule, token.value)
+
+      %{rule: :time} ->
+        rrule
+        |> RRULE.add_hour(token.value.hour)
+        |> RRULE.add_minute(token.value.minute)
+
+      unsupported ->
+        raise "Unsupported rule inside :at group: #{inspect(unsupported)}"
     end
   end
 

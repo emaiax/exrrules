@@ -44,10 +44,26 @@ defmodule Exrrules.ParserTest do
   end
 
   test "rule: at" do
-    assert %{rrule: %{freq: :daily, byhour: [10, 17]}} = Parser.parse("every day at 10 and 17")
-
     assert %{rrule: %{freq: :weekly, byhour: [10, 17], byday: ~w(MO TU WE TH FR)}} =
              Parser.parse("every weekday at 10 and 17")
+
+    assert %{rrule: %{freq: :daily, byhour: [10], byminute: []}} =
+             Parser.parse("every day at 10")
+
+    assert %{rrule: %{freq: :daily, byhour: [10], byminute: []}} =
+             Parser.parse("every day at 10am")
+
+    assert %{rrule: %{freq: :daily, byhour: [22], byminute: []}} =
+             Parser.parse("every day at 10 pm")
+
+    assert %{rrule: %{freq: :daily, byhour: [10], byminute: [30]}} =
+             Parser.parse("every day at 10:30")
+
+    assert %{rrule: %{freq: :daily, byhour: [10], byminute: [30]}} =
+             Parser.parse("every day at 10:30am")
+
+    assert %{rrule: %{freq: :daily, byhour: [22], byminute: [30]}} =
+             Parser.parse("every day at 10:30 pm")
 
     assert_raise RuntimeError, ~r{:at group: .* :monday}, fn ->
       Parser.parse("every weekday at mondays")
