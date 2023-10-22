@@ -72,22 +72,23 @@ defmodule Exrrules.Language.English do
       #
       # numbers
       #
+      other: "other",
       nth: {"([1-9][0-9]*)(th|nd|rd|st)", allow_comma: true},
       number: {"[1-9][0-9]*", allow_comma: true},
-      number_text: {"(one|two|three)", allow_comma: true},
+      number_text: {"(one|two|three|four)", allow_comma: true},
 
       # relative positions
       #
       first: "first",
       second: "second",
       third: "third",
+      fourth: "fourth",
       next: "next",
       last: "last",
 
       # keywords
       #
       every: "every",
-      other: "other",
       on: "(on|in)",
       at: "(at)",
       of: "of",
