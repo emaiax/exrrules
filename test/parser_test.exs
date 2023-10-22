@@ -134,6 +134,9 @@ defmodule Exrrules.ParserTest do
     assert %{rrule: %{freq: :monthly, byday: ["+1FR", "-1TU"]}} =
              Parser.parse("every month on the first friday and last tuesday")
 
+    assert %{rrule: %{freq: :monthly, byday: ["+1FR", "+1SA", "-1TU"]}} =
+             Parser.parse("every month on the first friday and saturday and last tuesday")
+
     assert %{rrule: %{freq: :yearly, bymonth: [1], bymonthday: [1]}} =
              Parser.parse("every january on the first day")
 

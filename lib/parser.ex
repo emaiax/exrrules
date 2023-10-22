@@ -79,6 +79,9 @@ defmodule Exrrules.Parser do
     relative_position = if relative.rule == :last, do: "", else: "+"
 
     case absolute do
+      %{rule: :comma} ->
+        rrule
+
       %{rule_group: :weekday} ->
         rrule
         |> RRULE.add_freq(:monthly, lazy: true)
@@ -90,7 +93,7 @@ defmodule Exrrules.Parser do
         |> RRULE.add_month_day(relative.value)
 
       unsupported ->
-        raise "Unsupported rule inside :every group: #{inspect(unsupported)}"
+        raise "Unsupported rule inside in relative :#{relative.rule} group: #{inspect(unsupported)}"
     end
   end
 
