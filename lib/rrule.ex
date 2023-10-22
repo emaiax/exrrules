@@ -39,6 +39,7 @@ defmodule Exrrules.RRULE do
 
   def add_count(%__MODULE__{} = rrule, value), do: %{rrule | count: value}
   def add_interval(%__MODULE__{} = rrule, value), do: %{rrule | interval: value}
+  def add_until(%__MODULE__{} = rrule, value), do: %{rrule | until: value}
 
   def add_hour(%__MODULE__{} = rrule, value), do: update_rrule(rrule, :byhour, value)
   def add_minute(%__MODULE__{} = rrule, value), do: update_rrule(rrule, :byminute, value)
