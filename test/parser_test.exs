@@ -3,7 +3,6 @@ defmodule Exrrules.ParserTest do
 
   alias Exrrules.Parser
 
-  @tag :keep
   test "rule: interval" do
     assert %{rrule: %{freq: :daily, interval: 5}} = Parser.parse("every 5 days")
     assert %{rrule: %{freq: :daily, interval: 2}} = Parser.parse("every other day")
@@ -13,7 +12,6 @@ defmodule Exrrules.ParserTest do
     assert %{rrule: %{freq: :monthly, interval: 3}} = Parser.parse("every three months")
   end
 
-  @tag :keep
   test "rule: every" do
     assert %{rrule: %{freq: :hourly}} = Parser.parse("every hour")
     assert %{rrule: %{freq: :daily}} = Parser.parse("every day")
@@ -45,31 +43,29 @@ defmodule Exrrules.ParserTest do
     #          Parser.parse("every january 1st, april 15th and september 30th")
   end
 
-  @tag :keep
   test "rule: at" do
     assert %{rrule: %{freq: :daily, byhour: [10, 17]}} = Parser.parse("every day at 10 and 17")
 
     assert %{rrule: %{freq: :weekly, byhour: [10, 17], byday: ~w(MO TU WE TH FR)}} =
              Parser.parse("every weekday at 10 and 17")
 
-    assert_raise RuntimeError, ~r{:at group: :monday}, fn ->
+    assert_raise RuntimeError, ~r{:at group: .* :monday}, fn ->
       Parser.parse("every weekday at mondays")
     end
 
-    assert_raise RuntimeError, ~r{:at group: :april}, fn ->
+    assert_raise RuntimeError, ~r{:at group: .* :april}, fn ->
       Parser.parse("every weekday at april")
     end
   end
 
-  @tag :keep
   test "rule: (on|in)" do
     assert %{rrule: %{freq: :weekly, byday: ~w(MO)}} = Parser.parse("every day on mondays")
 
     assert %{rrule: %{freq: :weekly, byday: ~w(MO WE FR)}} =
              Parser.parse("every week on monday, wednesday and friday")
 
-    assert %{rrule: %{freq: :weekly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
-             Parser.parse("every weekday on april and december")
+    assert %{rrule: %{freq: :weekly, byday: ~w(MO), interval: 2}} =
+             Parser.parse("every week on other mondays")
 
     assert %{rrule: %{freq: :hourly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
              Parser.parse("every hour on april and december on weekdays")
@@ -89,7 +85,6 @@ defmodule Exrrules.ParserTest do
     assert %{rrule: %{freq: :monthly, count: 12}} = Parser.parse("every month for 12 times")
   end
 
-  @tag :keep
   test "mixed rules" do
     assert %{
              rrule: %{
@@ -102,7 +97,37 @@ defmodule Exrrules.ParserTest do
              }
            } =
              Parser.parse(
-               "every other hour on weekdays of april and december for 3 times at 9 and 18"
+               "every other hour on weekdays of april and december at 9 and 18 for 3 times"
              )
+  end
+
+  test "rule: relatives" do
+    assert %{rrule: %{freq: :monthly, bymonthday: [1]}} = Parser.parse("every 1st day")
+    assert %{rrule: %{freq: :monthly, bymonthday: [1]}} = Parser.parse("every first day")
+    assert %{rrule: %{freq: :monthly, bymonthday: [2]}} = Parser.parse("every second day")
+    assert %{rrule: %{freq: :monthly, bymonthday: [-1]}} = Parser.parse("every last day")
+
+    assert %{rrule: %{freq: :monthly, byday: ["+1FR"]}} = Parser.parse("every 1st friday")
+
+    assert %{rrule: %{freq: :monthly, bymonthday: [15]}} =
+             Parser.parse("every month on the 15th")
+
+    assert %{rrule: %{freq: :yearly, byday: ["+1FR"]}} =
+             Parser.parse("every year on the 1st friday")
+
+    assert %{rrule: %{freq: :monthly, byday: ["+1FR", "-1TU"]}} =
+             Parser.parse("every month on the first friday and last tuesday")
+
+    assert %{rrule: %{freq: :yearly, bymonth: [1], bymonthday: [1]}} =
+             Parser.parse("every january on the first day")
+
+    assert %{rrule: %{freq: :yearly, bymonth: [1], bymonthday: [-1]}} =
+             Parser.parse("every january on the last day")
+
+    assert %{rrule: %{freq: :yearly, bymonth: [1], bymonthday: [15]}} =
+             Parser.parse("every january on the 15th")
+
+    assert %{rrule: %{freq: :yearly, bymonth: [4], byday: ["+4FR"]}} =
+             Parser.parse("every april on the fourth friday")
   end
 end

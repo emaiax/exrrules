@@ -61,54 +61,84 @@ defmodule Exrrules.Parser do
     process_rule_group({rule_group, tokens}, parser)
   end
 
+  # Recursive: this is where all group starts to process their inner rules
   defp process_rule_group({rule_group, [token | tokens]}, %{rrule: rrule} = parser) do
     parser = %{parser | rrule: process_token({rule_group, token}, rrule)}
 
     process_rule_group({rule_group, tokens}, parser)
   end
 
+  # Process a relative token and a list of absolute tokens
+  #
+  defp process_token({rule_group, {relative, absolutes}}, rrule) when is_list(absolutes) do
+    Enum.reduce(absolutes, rrule, fn absolute, rrule ->
+      process_token({rule_group, {relative, absolute}}, rrule)
+    end)
+  end
+
+  # Process a relative token with an absolute token
+  #
+  defp process_token({_rule_group, {relative, absolute}}, rrule) do
+    relative_position = if relative.rule == :last, do: "", else: "+"
+
+    case absolute do
+      %{rule_group: :weekday} ->
+        rrule
+        |> RRULE.add_freq(:monthly, lazy: true)
+        |> RRULE.add_weekday(absolute.value, "#{relative_position}#{relative.value}")
+
+      %{rule: :number} ->
+        rrule
+        |> RRULE.add_freq(:monthly)
+        |> RRULE.add_month_day(relative.value)
+
+      unsupported ->
+        raise "Unsupported rule inside :every group: #{inspect(unsupported)}"
+    end
+  end
+
   # process a single token inside :every rule group
   defp process_token({:every, token}, rrule) do
-    case token.rule do
+    case token do
       # ingest other/number tokens that denotes an interval
       #
-      rule when rule in [:other, :number, :number_text] ->
+      %{rule: rule} when rule in [:other, :number, :number_text] ->
         RRULE.add_interval(rrule, token.value)
 
-      :hours ->
+      %{rule: :hours} ->
         RRULE.add_freq(rrule, :hourly)
 
-      :days ->
-        RRULE.add_freq(rrule, :daily)
+      %{rule: :days} ->
+        RRULE.add_freq(rrule, :daily, lazy: true)
 
-      :weeks ->
+      %{rule: :weeks} ->
         RRULE.add_freq(rrule, :weekly)
 
-      :months ->
+      %{rule: :months} ->
         RRULE.add_freq(rrule, :monthly)
 
-      :years ->
+      %{rule: :years} ->
         RRULE.add_freq(rrule, :yearly)
 
-      :weekdays ->
+      %{rule: :weekdays} ->
         rrule
         |> RRULE.add_freq(:weekly)
         |> RRULE.add_weekdays()
 
-      rule when rule in @weekdays_rules ->
+      %{rule: rule} when rule in @weekdays_rules ->
         rrule
         |> RRULE.add_freq(:weekly)
         |> RRULE.add_weekday(rule)
 
-      rule when rule in [:nth, :number] ->
-        rrule
-        |> RRULE.add_freq(:monthly)
-        |> RRULE.add_month_day(token.value)
-
-      rule when rule in @months_rules ->
+      %{rule: rule} when rule in @months_rules ->
         rrule
         |> RRULE.add_freq(:yearly)
         |> RRULE.add_month(rule)
+
+      %{rule_group: :relative} ->
+        rrule
+        |> RRULE.add_freq(:monthly)
+        |> RRULE.add_month_day(token.value)
 
       unsupported ->
         raise "Unsupported rule inside :every group: #{inspect(unsupported)}"
@@ -117,8 +147,8 @@ defmodule Exrrules.Parser do
 
   # process a single token inside :at rule group
   defp process_token({:at, token}, rrule) do
-    case token.rule do
-      rule when rule in [:other, :number, :number_text] ->
+    case token do
+      %{rule: rule} when rule in [:other, :number, :number_text] ->
         RRULE.add_hour(rrule, token.value)
 
       unsupported ->
@@ -129,6 +159,12 @@ defmodule Exrrules.Parser do
   # process a single token inside :on rule group
   defp process_token({:on, token}, rrule) do
     case token do
+      %{rule: :other} ->
+        RRULE.add_interval(rrule, token.value)
+
+      %{rule: :days} ->
+        RRULE.add_freq(rrule, token.value, lazy: true)
+
       %{rule: :weekdays} ->
         rrule
         |> RRULE.add_freq(:weekly, lazy: true)
@@ -144,8 +180,16 @@ defmodule Exrrules.Parser do
         |> RRULE.add_freq(:yearly, lazy: true)
         |> RRULE.add_month(rule)
 
+      %{rule: :nth, value: value} ->
+        rrule
+        |> RRULE.add_freq(:monthly, lazy: true)
+        |> RRULE.add_month_day(value)
+
+      %{rule_group: :relative} ->
+        RRULE.add_month_day(rrule, token.value)
+
       # jibberish
-      %{rule: rule} when rule in ~w(of on)a ->
+      %{rule: rule} when rule in ~w(of on the comma)a ->
         rrule
 
       unsupported ->
