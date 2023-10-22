@@ -15,6 +15,8 @@ defmodule Exrrules.Parser.Token do
   def is_relative?(%__MODULE__{rule: rule}), do: rule in @relatives
   def is_jibberish?(%__MODULE__{rule: rule}), do: rule in @jibberish
 
+  def force_interval!(%__MODULE__{} = token), do: %{token | rule_group: :interval}
+
   def new(rule, token) do
     token = String.trim(token)
     rule_group = build_rule_group(rule)
