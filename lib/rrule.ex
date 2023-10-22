@@ -21,7 +21,6 @@ defmodule Exrrules.RRULE do
 
   def to_string(%__MODULE__{} = attrs, prefix \\ "") do
     attrs
-    |> Map.drop([:bydaypos])
     |> Map.from_struct()
     |> Enum.reject(&empty?/1)
     |> Enum.reverse()
