@@ -6,6 +6,7 @@ defmodule Exrrules.Parser.TokenizerTest do
   @tag :skip
   test "shortcut rules" do
     assert [:every, :days] = keywords("daily")
+    assert [:every, :week] = keywords("weekly")
   end
 
   test "empty strings" do
@@ -163,45 +164,53 @@ defmodule Exrrules.Parser.TokenizerTest do
       {"every weeksx", ~r{Unsupported rule "weeksx"}},
       {"every monthsx", ~r{Unsupported rule "monthsx"}},
       {"every yearsx", ~r{Unsupported rule "yearsx"}},
-      {"every first", ~r{Can't find matching token after :first}},
-      {"every second", ~r{Can't find matching token after :second}},
-      {"every third", ~r{Can't find matching token after :third}},
-      {"every next", ~r{Can't find matching token after :next}},
-      {"every last", ~r{Can't find matching token after :last}},
+      {"every next", ~r{Can't find valid token after :next}},
+      {"every last", ~r{Can't find valid token after :last}},
+      # {"every next day", ~r{Can't find valid token after :next}},
       # not a real time, so it doesn't match the time rule
       {"25 pm", ~r{Unsupported rule "pm"}}
     ]
 
     Enum.each(tokens, fn {text, regex} ->
-      assert_raise RuntimeError, regex, fn -> keywords(text) |> dbg() end
+      assert_raise RuntimeError, regex, fn ->
+        keywords(text)
+
+        IO.inspect("#{text}: should've raised exception")
+      end
     end)
   end
 
-  test "group comma tokens" do
+  test "grouped tokens" do
     assert %{
              every: [
-               %{rule: :first},
-               [
-                 %{rule: :monday},
-                 %{rule: :comma},
-                 %{rule: :friday},
-                 %{rule: :comma},
-                 %{rule: :sunday}
-               ]
+               {
+                 %{rule: :first},
+                 [
+                   %{rule: :monday},
+                   %{rule: :comma},
+                   %{rule: :friday},
+                   %{rule: :comma},
+                   %{rule: :sunday}
+                 ]
+               }
              ]
            } = tokens("every first monday, friday and sunday")
 
     assert %{
              every: [
-               %{rule: :first},
-               [
-                 %{rule: :monday},
-                 %{rule: :comma},
-                 %{rule: :tuesday}
-               ],
+               {
+                 %{rule: :first},
+                 [
+                   %{rule: :monday},
+                   %{rule: :comma},
+                   %{rule: :tuesday}
+                 ]
+               },
                %{rule: :comma},
-               %{rule: :last},
-               %{rule: :friday}
+               {
+                 %{rule: :last},
+                 %{rule: :friday}
+               }
              ],
              at: [
                [
@@ -224,6 +233,16 @@ defmodule Exrrules.Parser.TokenizerTest do
                ]
              ]
            } = tokens("every day at 10am and 14, 18")
+
+    assert %{
+             every: [%{rule: :january}],
+             on: [%{rule: :nth}]
+           } = tokens("every january on the 7th")
+
+    assert %{
+             every: [%{rule: :january}],
+             on: [%{rule: :nth}]
+           } = tokens("every january on the 7th")
   end
 
   defp keywords(input) do

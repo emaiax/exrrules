@@ -19,7 +19,9 @@ defmodule Exrrules.Parser.Tokenizer do
 
     grouped_tokens =
       tokens
+      |> Enum.reject(&Token.is_jibberish?/1)
       |> group_commas()
+      |> group_relatives()
       |> group_tokens()
 
     %__MODULE__{
@@ -73,81 +75,6 @@ defmodule Exrrules.Parser.Tokenizer do
     end
   end
 
-  # Function to group tokens by keywords
-  def group_tokens(tokens, keywords \\ @group_rules) do
-    group_tokens(tokens, keywords, %{current_group: nil})
-  end
-
-  # Base case: when there are no more tokens
-  defp group_tokens([], _keywords, result) do
-    Map.drop(result, [:current_group])
-  end
-
-  # Recursive case: `:on` is a special case, it can be used in multiple ways:
-  #
-  # - `every day until on 10th`, denotes an ending date
-  # - `every day until on the 10th`, denotes an ending date
-  # - `every day starting on the 10th`, denotes a starting date
-  # - `every day starting on the 10th`, denotes a starting date
-  #
-  # Any other variation other then these denotes a change in frequency.
-  #
-  # Whenever we capture an `:on` that denotes a starting or ending dates,
-  # we must not close the current group.
-  defp group_tokens([%{rule: :on} = token | rest], keywords, %{current_group: group} = result)
-       when group in ~w(starting until on)a do
-    tokens = Enum.reverse([token | Enum.reverse(result[group])])
-
-    group_tokens(rest, keywords, Map.put(result, group, tokens))
-  end
-
-  # Recursive case: token is a comma-group
-  defp group_tokens([comma_group | rest], keywords, result) when is_list(comma_group) do
-    current_group = Map.get(result, :current_group)
-
-    group_tokens =
-      result
-      |> Map.get(current_group, [])
-      |> Enum.reverse()
-
-    tokens = Enum.reverse([comma_group | group_tokens])
-
-    group_tokens(rest, keywords, Map.put(result, current_group, tokens))
-  end
-
-  # Recursive case: process the next token
-  defp group_tokens([token | rest], keywords, result) do
-    current_group = Map.get(result, :current_group)
-
-    group_tokens =
-      result
-      |> Map.get(current_group, [])
-      |> Enum.reverse()
-
-    # token is a group?
-    case Enum.member?(keywords, token.rule) do
-      # token group found, close the current group and start a new one
-      true ->
-        result =
-          result
-          |> Map.put(token.rule, [])
-          |> Map.put(:current_group, token.rule)
-
-        group_tokens(rest, keywords, result)
-
-      # Non-keyword tokens, add it to the current group
-      false ->
-        # if token is relative, but input is empty, we need to raise an error
-        if Token.is_relative?(token) && Enum.empty?(rest) do
-          raise "Can't find matching token after #{inspect(token.rule)}"
-        end
-
-        tokens = Enum.reverse([token | group_tokens])
-
-        group_tokens(rest, keywords, Map.put(result, current_group, tokens))
-    end
-  end
-
   # Recursive: process all tokens to find the `:comma`s to group
   #
   defp group_commas(tokens, acc \\ [])
@@ -195,4 +122,135 @@ defmodule Exrrules.Parser.Tokenizer do
        do: true
 
   defp comma_group?(_prev_token, _next_token), do: false
+
+  # Recursive: process all tokens to find the `:relative`s to group
+  #
+  defp group_relatives(tokens, acc \\ [])
+
+  defp group_relatives([], acc), do: Enum.reverse(acc)
+
+  # Recursive: when relative found, we get the next token to check if it's a valid relative group
+  #
+  defp group_relatives([%{rule_group: :relative} = relative | tokens], acc) do
+    {absolute, tokens} =
+      case Enum.at(tokens, 0) do
+        %{rule_group: :month} ->
+          List.pop_at(tokens, 0)
+
+        %{rule_group: :weekday} ->
+          List.pop_at(tokens, 0)
+
+        rules when is_list(rules) ->
+          List.pop_at(tokens, 0)
+
+        unsupported_relative ->
+          if relative.rule in [:last, :next] && Enum.empty?(tokens) do
+            raise "Can't find valid token after #{inspect(relative.rule)}: #{inspect(unsupported_relative)})}"
+          else
+            {nil, tokens}
+          end
+      end
+
+    if absolute do
+      group_relatives(tokens, [{relative, absolute} | acc])
+    else
+      group_relatives([absolute | tokens], [relative | acc])
+    end
+  end
+
+  defp group_relatives([token | tokens], acc), do: group_relatives(tokens, [token | acc])
+
+  # Function to group tokens by keywords
+  def group_tokens(tokens, keywords \\ @group_rules) do
+    group_tokens(tokens, keywords, %{current_group: nil})
+  end
+
+  # Base case: when there are no more tokens
+  defp group_tokens([], _keywords, result) do
+    Map.drop(result, [:current_group])
+  end
+
+  # Recursive case: `:on` is a special case, it can be used in multiple ways:
+  #
+  # - `every day until on 10th`, denotes an ending date
+  # - `every day until on the 10th`, denotes an ending date
+  # - `every day starting on the 10th`, denotes a starting date
+  # - `every day starting on the 10th`, denotes a starting date
+  #
+  # Any other variation other then these denotes a change in frequency.
+  #
+  # Whenever we capture an `:on` that denotes a starting or ending dates,
+  # we must not close the current group.
+  defp group_tokens([%{rule: :on} = token | rest], keywords, %{current_group: group} = result)
+       when group in ~w(starting until on)a do
+    tokens = Enum.reverse([token | Enum.reverse(result[group])])
+
+    group_tokens(rest, keywords, Map.put(result, group, tokens))
+  end
+
+  # Recursive case: token is a comma-group
+  defp group_tokens([comma_group | rest], keywords, result) when is_list(comma_group) do
+    current_group = Map.get(result, :current_group)
+
+    group_tokens =
+      result
+      |> Map.get(current_group, [])
+      |> Enum.reverse()
+
+    tokens = Enum.reverse([comma_group | group_tokens])
+
+    group_tokens(rest, keywords, Map.put(result, current_group, tokens))
+  end
+
+  # Recursive case: token is a relative-group
+  defp group_tokens([{relative, absolute} | rest], keywords, result) do
+    current_group = Map.get(result, :current_group)
+
+    group_tokens =
+      result
+      |> Map.get(current_group, [])
+      |> Enum.reverse()
+
+    tokens = Enum.reverse([{relative, absolute} | group_tokens])
+
+    group_tokens(rest, keywords, Map.put(result, current_group, tokens))
+  end
+
+  # Recursive case: token is nil only when relative couldn't match a valid absolute, so we just skip it
+  defp group_tokens([nil | rest], keywords, result) do
+    group_tokens(rest, keywords, result)
+  end
+
+  # Recursive case: process the next token
+  defp group_tokens([token | rest], keywords, result) do
+    current_group = Map.get(result, :current_group)
+
+    group_tokens =
+      result
+      |> Map.get(current_group, [])
+      |> Enum.reverse()
+
+    # token is a group?
+    case Enum.member?(keywords, token.rule) do
+      # token group found, close the current group and start a new one
+      true ->
+        result =
+          result
+          |> Map.put(token.rule, [])
+          |> Map.put(:current_group, token.rule)
+
+        group_tokens(rest, keywords, result)
+
+      # Non-keyword tokens, add it to the current group
+      false ->
+        # if token is relative, but input is empty, we need to raise an error
+        if Token.is_relative?(token) && Enum.empty?(rest) do
+          raise "Can't find matching token after #{inspect(token.rule)}"
+        end
+
+        tokens = Enum.reverse([token | group_tokens])
+
+        group_tokens(rest, keywords, Map.put(result, current_group, tokens))
+    end
+  end
 end
