@@ -63,10 +63,14 @@ defmodule Exrrules.RRULE do
     |> update_rrule(:byday, "FR")
   end
 
+  def add_month(%__MODULE__{} = rrule, month) when is_integer(month) do
+    update_rrule(rrule, :bymonth, month)
+  end
+
   def add_month(%__MODULE__{} = rrule, month) do
     value = Enum.find_index(@months, &(&1 == month)) + 1
 
-    update_rrule(rrule, :bymonth, value)
+    add_month(rrule, value)
   end
 
   defp update_rrule(rrule, key, value) do
