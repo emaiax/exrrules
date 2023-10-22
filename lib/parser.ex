@@ -12,9 +12,6 @@ defmodule Exrrules.Parser do
             rules: [],
             tokenizer: []
 
-  @months_rules Exrrules.Language.English.months()
-  @weekdays_rules Exrrules.Language.English.weekdays()
-
   def to_rrule(text, lang \\ "en") do
     text
     |> parse(lang)
@@ -125,12 +122,12 @@ defmodule Exrrules.Parser do
         |> RRULE.add_freq(:weekly)
         |> RRULE.add_weekdays()
 
-      %{rule: rule} when rule in @weekdays_rules ->
+      %{rule_group: :weekday, rule: rule} ->
         rrule
         |> RRULE.add_freq(:weekly)
         |> RRULE.add_weekday(rule)
 
-      %{rule: rule} when rule in @months_rules ->
+      %{rule_group: :month, rule: rule} ->
         rrule
         |> RRULE.add_freq(:yearly)
         |> RRULE.add_month(rule)
