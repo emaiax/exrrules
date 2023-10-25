@@ -252,6 +252,11 @@ defmodule Exrrules.Parser.TokenizerTest do
              every: [%{rule: :january}],
              on: [%{rule: :nth}]
            } = tokens("every january on the 7th")
+
+    assert %{
+             every: [%{rule: :other}, %{rule: :weekdays}],
+             at: [%{rule: :number}, %{rule: :comma}, %{rule: :time}]
+           } = tokens("every other weekday at 9 and 6pm")
   end
 
   defp keywords(input) do

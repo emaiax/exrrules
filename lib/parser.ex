@@ -210,6 +210,10 @@ defmodule Exrrules.Parser do
         |> RRULE.add_hour(token.value.hour)
         |> RRULE.add_minute(token.value.minute)
 
+      # jiberrish
+      %{rule: :comma} ->
+        rrule
+
       unsupported ->
         raise "Unsupported rule inside :at group: #{inspect(unsupported)}"
     end
