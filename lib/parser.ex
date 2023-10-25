@@ -174,7 +174,7 @@ defmodule Exrrules.Parser do
 
       %{rule_group: :weekday, rule: rule} ->
         rrule
-        |> RRULE.add_freq(:weekly)
+        |> RRULE.add_freq(:weekly, lazy: true)
         |> RRULE.add_weekday(rule)
 
       %{rule_group: :month, rule: rule} ->
