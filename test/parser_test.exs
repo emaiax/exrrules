@@ -87,7 +87,7 @@ defmodule Exrrules.ParserTest do
   end
 
   test "rule: (on|in)" do
-    assert %{rrule: %{freq: :weekly, byday: ~w(MO)}} = Parser.parse("every day on mondays")
+    assert %{rrule: %{freq: :weekly, byday: ~w(MO)}} = Parser.parse("every monday")
 
     assert %{rrule: %{freq: :weekly, byday: ~w(MO WE FR)}} =
              Parser.parse("every week on monday, wednesday and friday")
@@ -106,6 +106,19 @@ defmodule Exrrules.ParserTest do
 
     assert %{rrule: %{freq: :hourly, byday: ~w(MO TU WE TH FR), bymonth: [4, 12]}} =
              Parser.parse("every hour on weekdays of april and december")
+
+    # the ON can modify the frequency but it depends on the context
+    #
+    # - every june on weekdays, freq: yearly, bymonth: [6], byday: ~w(MO TU WE TH FR)
+    # - every weekday on june, freq: monthly, bymonth: [6], byday: ~w(MO TU WE TH FR)
+    # assert %{rrule: %{freq: :yearly, byday: ~w(MO TU WE TH FR), bymonth: [6]}} =
+    #          Parser.parse("every june on weekdays")
+
+    # assert %{rrule: %{freq: :monthly, byday: ~w(MO TU WE TH FR), bymonth: [6]}} =
+    #          Parser.parse("every weekday on june")
+
+    # assert %{rrule: %{freq: :weekly, byday: ~w(MO)}} = Parser.parse("every monday")
+    # assert %{rrule: %{freq: :weekly, byday: ~w(MO)}} = Parser.parse("every day on mondays")
   end
 
   test "rule: for" do

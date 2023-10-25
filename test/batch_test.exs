@@ -15,6 +15,8 @@ defmodule Exrrules.Parser.BatchTest do
     {"every week day", "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"},
     {"every work day at 8", "FREQ=WEEKLY;BYHOUR=8;BYDAY=MO,TU,WE,TH,FR"},
     {"every work day", "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"},
+    {"every other weekday at 9 and 6pm",
+     "INTERVAL=2;FREQ=WEEKLY;BYHOUR=9,18;BYDAY=MO,TU,WE,TH,FR"},
     {"every 2 days", "INTERVAL=2;FREQ=DAILY"},
     {"every 2 months at 8", "INTERVAL=2;FREQ=MONTHLY;BYHOUR=8"},
     {"every 2 months", "INTERVAL=2;FREQ=MONTHLY"},
@@ -122,7 +124,8 @@ defmodule Exrrules.Parser.BatchTest do
     {"every workday", "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"},
     {"every year on the 13th friday", "FREQ=YEARLY;BYDAY=+13FR"},
     {"every year on the 1st friday", "FREQ=YEARLY;BYDAY=+1FR"},
-    {"every year on the first friday", "FREQ=YEARLY;BYDAY=+1FR"}
+    {"every year on the first friday", "FREQ=YEARLY;BYDAY=+1FR"},
+    {"every june and july on fridays", "FREQ=YEARLY;BYMONTH=6,7;BYDAY=FR"}
   ]
 
   @error_cases [
