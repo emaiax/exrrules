@@ -10,7 +10,7 @@ defmodule Exrrules.Language.English do
       # keywords
       #
       Rule.new(name: :every, patterns: ~w(every), keyword: true),
-      Rule.new(name: :on, patterns: ~w(on|in), keyword: true),
+      Rule.new(name: :on, patterns: "(on|in)", keyword: true),
       Rule.new(name: :at, patterns: ~w(at), keyword: true),
       Rule.new(name: :until, patterns: ~w(until), keyword: true),
       Rule.new(name: :starting, patterns: ~w(starting), keyword: true),
