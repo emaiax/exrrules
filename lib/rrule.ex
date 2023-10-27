@@ -3,8 +3,6 @@ defmodule Exrrules.RRULE do
   RULE is a recurrence rule, a component of a recurrence set.
   """
 
-  @months Exrrules.Language.English.months()
-
   defstruct freq: nil,
             interval: nil,
             count: nil,
@@ -64,14 +62,8 @@ defmodule Exrrules.RRULE do
     |> update_rrule(:byday, "FR")
   end
 
-  def add_month(%__MODULE__{} = rrule, month) when is_integer(month) do
-    update_rrule(rrule, :bymonth, month)
-  end
-
   def add_month(%__MODULE__{} = rrule, month) do
-    value = Enum.find_index(@months, &(&1 == month)) + 1
-
-    add_month(rrule, value)
+    update_rrule(rrule, :bymonth, month)
   end
 
   defp update_rrule(rrule, _key, nil), do: rrule

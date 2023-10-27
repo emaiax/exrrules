@@ -134,15 +134,15 @@ defmodule Exrrules.Parser do
         |> RRULE.add_freq(:weekly)
         |> RRULE.add_weekdays()
 
-      %{rule_group: :weekday, rule: rule} ->
+      %{rule_group: :weekday} ->
         rrule
         |> RRULE.add_freq(:weekly)
-        |> RRULE.add_weekday(rule)
+        |> RRULE.add_weekday(token.value)
 
-      %{rule_group: :month, rule: rule} ->
+      %{rule_group: :month} ->
         rrule
         |> RRULE.add_freq(:yearly)
-        |> RRULE.add_month(rule)
+        |> RRULE.add_month(token.value)
 
       %{rule_group: :relative} ->
         rrule
@@ -172,15 +172,15 @@ defmodule Exrrules.Parser do
         |> RRULE.add_freq(:weekly, lazy: true)
         |> RRULE.add_weekdays()
 
-      %{rule_group: :weekday, rule: rule} ->
+      %{rule_group: :weekday} ->
         rrule
         |> RRULE.add_freq(:weekly, lazy: true)
-        |> RRULE.add_weekday(rule)
+        |> RRULE.add_weekday(token.value)
 
-      %{rule_group: :month, rule: rule} ->
+      %{rule_group: :month} ->
         rrule
         |> RRULE.add_freq(:yearly, lazy: true)
-        |> RRULE.add_month(rule)
+        |> RRULE.add_month(token.value)
 
       %{rule: :nth, value: value} ->
         rrule

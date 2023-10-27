@@ -6,8 +6,8 @@ defmodule Exrrules.Parser.Token do
             value: nil,
             token: nil
 
-  @months Exrrules.Language.English.months()
-  @weekdays Exrrules.Language.English.weekdays()
+  @months ~w(january february march april may june july august september october november december)a
+  @weekdays ~w(monday tuesday wednesday thursday friday saturday sunday)a
 
   @relatives ~w(first second third fourth next last nth)a
   @jibberish ~w(of the)a
