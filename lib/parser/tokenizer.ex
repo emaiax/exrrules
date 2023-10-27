@@ -3,6 +3,7 @@ defmodule Exrrules.Parser.Tokenizer do
 
   defstruct tokens: %{}, keywords: []
 
+  alias Exrrules.Language.Rule
   alias Exrrules.Parser.Token
 
   @base_rules Exrrules.Language.English.rules()
@@ -31,41 +32,27 @@ defmodule Exrrules.Parser.Tokenizer do
   end
 
   # Base case: when the input string is finished
-  defp tokenize(nil, tokens, _keywords) do
+  defp tokenize(nil, tokens, _rules) do
     {:ok, Enum.reverse(tokens)}
   end
 
-  # Match keywords at the beginning of the input string
-  defp tokenize(input, tokens, keywords) do
-    case find_matching_keyword(input, keywords) do
-      {nil, nil} -> {:ok, Enum.reverse(tokens), input}
-      {keyword, rest} -> tokenize(rest, [keyword | tokens], keywords)
+  # Match rules at the beginning of the input string
+  defp tokenize(input, tokens, rules) do
+    case build_token_from_input(input, rules) do
+      {nil, _nil} -> {:ok, Enum.reverse(tokens), input}
+      {token, rest} -> tokenize(rest, [token | tokens], rules)
     end
   end
 
-  # Helper function to find a matching keyword at the beginning of the string
-  defp find_matching_keyword(nil, _keywords), do: {nil, nil}
+  # Build token from input string if it matches any of the rules
+  defp build_token_from_input(nil, _rules), do: {nil, nil}
 
-  # Helper function to find a matching keyword at the beginning of the string
-  defp find_matching_keyword(input, keywords) do
-    case Enum.find(keywords, fn {_rule, regex} -> input =~ regex end) do
-      {rule, regex} ->
-        {match, rest} =
-          case Regex.split(regex, input, include_captures: true, trim: true) do
-            # last match, no more tokens
-            [match] ->
-              {match, nil}
-
-            [match | [rest]] ->
-              {match, String.trim(rest)}
-
-            other ->
-              raise "Can't tokenize #{inspect(other)} from #{inspect(input)}"
-          end
-
-        {Token.new(rule, String.trim(match)), rest}
-
-      _ ->
+  defp build_token_from_input(input, rules) do
+    with %Rule{} = rule <- Enum.find(rules, &Rule.match?(&1, input)),
+         {match, rest} <- Rule.split(rule, input) do
+      {Token.new(rule.name, match), rest}
+    else
+      nil ->
         invalid_token =
           input
           |> String.split(" ")

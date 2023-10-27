@@ -32,6 +32,27 @@ defmodule Exrrules.Language.Rule do
     }
   end
 
+  def match?(%__MODULE__{patterns: patterns}, input) do
+    Enum.any?(patterns, &Regex.match?(&1, input))
+  end
+
+  def split(%__MODULE__{patterns: patterns}, input) do
+    Enum.reduce_while(patterns, {nil, nil}, fn pattern, {nil, nil} ->
+      case Regex.split(pattern, input, include_captures: true, trim: true) do
+        # last match, nothing else to process
+        [match] ->
+          {:halt, {match, nil}}
+
+        # found match and there's more input to process
+        [match | rest] ->
+          {:halt, {match, rest |> Enum.join() |> String.trim()}}
+
+        other ->
+          raise "Can't capture #{inspect(other)} from #{inspect(input)}"
+      end
+    end)
+  end
+
   defp process_regex_rule(pattern, allow_comma) when is_binary(pattern) do
     prefix = "^"
     pattern = String.replace(pattern, ~r{\n*}, "")
